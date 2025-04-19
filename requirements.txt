@@ -1,2 +1,2 @@
 Flask==2.3.2
-pyswisseph==2.10.02
+pyswisseph==2.10.3.1  
