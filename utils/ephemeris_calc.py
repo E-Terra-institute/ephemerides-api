@@ -17,6 +17,23 @@ PLANETS = {
     'Lilith':     swe.MEAN_APOG,
 }
 
+def get_planet_positions(year: int, month: int, day: int) -> dict:
+    jd = swe.julday(year, month, day)
+    positions = {}
+
+    # 1) базовые планеты + Lilith
+    for name, code in PLANETS.items():
+        data, _ = swe.calc_ut(jd, code)
+        positions[name] = round(data[0] % 360, 2)
+
+    # 2) геоцентрическая оппозиция к Lilith — Selena
+    if 'Lilith' in positions:
+        sel = (positions['Lilith'] + 180) % 360
+        positions['Selena'] = round(sel, 2)
+
+    return positions
+
+
 # Аспекты и орбис
 ASPECTS = {
     'Conjunction': 0,
