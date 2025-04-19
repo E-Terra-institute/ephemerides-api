@@ -1,0 +1,90 @@
+/* Основные стили для всего приложения */
+body {
+  margin: 0;
+  padding: 10px;
+  font-family: "Segoe UI", sans-serif;
+  background: #f5f7fa;
+  color: #2c3e50;
+}
+
+/* Контейнер конвертера */
+.converter {
+  max-width: 600px;
+  margin: 20px auto;
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.converter h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+/* Группа полей формы */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+label {
+  font-weight: 500;
+}
+
+/* Поля ввода и селект */
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus {
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 3px rgba(44,62,80,0.1);
+  outline: none;
+}
+
+/* Кнопка конвертации */
+button {
+  width: 100%;
+  background-color: #2c3e50;
+  color: #ffffff;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #1a242f;
+}
+
+/* Вывод результата */
+.output {
+  margin-top: 20px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Адаптивность (если будет несколько полей в ряд) */
+@media (min-width: 600px) {
+  .form-row {
+    flex-direction: row;
+  }
+  .form-row label {
+    flex: 1;
+  }
+}
