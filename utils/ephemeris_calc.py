@@ -3,7 +3,7 @@ import swisseph as swe
 # Путь к папке с .se1‑файлами
 swe.set_ephe_path('./ephe')
 
-# Список планет и фиктивных точек
+# Список планет и фиктивных точек (без Selena)
 PLANETS = {
     'Sun':        swe.SUN,
     'Moon':       swe.MOON,
@@ -14,10 +14,13 @@ PLANETS = {
     'Uranus':     swe.URANUS,
     'Pluto':      swe.PLUTO,
     'True Node':  swe.TRUE_NODE,
-    'Lilith':     swe.MEAN_APOG,
+    'Lilith':     swe.MEAN_APOG
 }
 
 def get_planet_positions(year: int, month: int, day: int) -> dict:
+    """
+    Геоцентрические долготы планет + Lilith и Selena (Lilith + 180°).
+    """
     jd = swe.julday(year, month, day)
     positions = {}
 
@@ -26,13 +29,11 @@ def get_planet_positions(year: int, month: int, day: int) -> dict:
         data, _ = swe.calc_ut(jd, code)
         positions[name] = round(data[0] % 360, 2)
 
-    # 2) геоцентрическая оппозиция к Lilith — Selena
+    # 2) Selena как оппозиция к Lilith
     if 'Lilith' in positions:
-        sel = (positions['Lilith'] + 180) % 360
-        positions['Selena'] = round(sel, 2)
+        positions['Selena'] = round((positions['Lilith'] + 180) % 360, 2)
 
     return positions
-
 
 # Аспекты и орбис
 ASPECTS = {
@@ -42,14 +43,6 @@ ASPECTS = {
     'Square': 90
 }
 ORB = 6
-
-def get_planet_positions(year: int, month: int, day: int) -> dict:
-    jd = swe.julday(year, month, day)
-    positions = {}
-    for name, code in PLANETS.items():
-        data, _ = swe.calc_ut(jd, code)
-        positions[name] = round(data[0], 2)
-    return positions
 
 def get_sidereal_time(year: int, month: int, day: int) -> float:
     jd = swe.julday(year, month, day)
