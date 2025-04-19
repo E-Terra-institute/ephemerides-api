@@ -68,12 +68,7 @@ def get_houses_and_planet_houses(
     lon: float,
     hsys: str = 'P'
 ) -> dict:
-    """
-    Возвращает:
-      - asc, mc: сидерический асцендент и среднее небо
-      - planet_houses: номер дома для каждой планеты
-    """
-    # Если передали str, конвертируем в байты
+    # Приводим hsys к байтам
     if isinstance(hsys, str):
         hsys = hsys.encode('ascii')
 
@@ -81,37 +76,39 @@ def get_houses_and_planet_houses(
     ut = hour + minute/60.0 + second/3600.0
     jd = swe.julday(year, month, day, ut)
 
-    # cusps[1..12] — границы домов, ascmc[0]=Asc, ascmc[1]=MC
+    # Получаем cusps и ascmc
     cusps, ascmc = swe.houses(jd, lat, lon, hsys)
     asc = round(ascmc[0], 2)
     mc  = round(ascmc[1], 2)
 
-    # Определяем дом для каждой планеты
+    # Приводим cusps к списку границ домов
+    cusp_list = list(cusps)
+    # Если длина >12 (есть dummy нулевой элемент), убираем его
+    if len(cusp_list) > 12:
+        cusp_list = cusp_list[1:]
+    n = len(cusp_list)  # обычно 12
+
+    # Считаем позиции планет
     planet_positions = get_planet_positions(year, month, day)
     planet_houses = {}
+
+    # Для каждой планеты ищем в каком куспе она стоит
     for name, lon_p in planet_positions.items():
         L = lon_p % 360
-        house = None
-        for i in range(1, 13):
-            start = cusps[i] % 360
-            # для домов 1–11 берем следующий элемент,
-            # для 12‑го дома — возвращаемся к первому cusp
-            if i < 12:
-                end = cusps[i+1] % 360
-            else:
-                end = cusps[1] % 360
-
+        house_no = None
+        for i, start_raw in enumerate(cusp_list):
+            start = start_raw % 360
+            end = cusp_list[(i+1) % n] % 360
             if start < end:
                 if start <= L < end:
-                    house = i
+                    house_no = i + 1
                     break
             else:
-                # дом пересекает 0° эклиптики
+                # диапазон пересекает 0°
                 if L >= start or L < end:
-                    house = i
+                    house_no = i + 1
                     break
-
-        planet_houses[name] = house
+        planet_houses[name] = house_no
 
     return {
         'asc': asc,
