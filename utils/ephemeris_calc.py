@@ -58,20 +58,35 @@ def get_aspects(positions: dict) -> list:
     return aspects
 
 def get_houses_and_planet_houses(
-    year: int, month: int, day: int,
-    hour: int, minute: int, second: int,
-    lat: float, lon: float,
+    year: int,
+    month: int,
+    day: int,
+    hour: int,
+    minute: int,
+    second: int,
+    lat: float,
+    lon: float,
     hsys: str = 'P'
 ) -> dict:
-    # Юлианская дата с учётом времени (UTC)
+    """
+    Возвращает:
+      - asc, mc: сидерический асцендент и среднее небо
+      - planet_houses: номер дома для каждой планеты
+    """
+    # Если передали str, конвертируем в один байт
+    if isinstance(hsys, str):
+        hsys = hsys.encode('ascii')  # теперь это b'P'
+
+    # Юлианская дата с учётом времени UT
     ut = hour + minute/60.0 + second/3600.0
     jd = swe.julday(year, month, day, ut)
-    # cusps[1..12] — границы домов, ascmc[0]=ASC, ascmc[1]=MC
+
+    # cusps[1..12] — границы домов, ascmc[0]=Asc, ascmc[1]=MC
     cusps, ascmc = swe.houses(jd, lat, lon, hsys)
     asc = round(ascmc[0], 2)
     mc  = round(ascmc[1], 2)
 
-    # Позиции лонгитуд для домов
+    # Определяем в каком доме каждая планета
     planet_positions = get_planet_positions(year, month, day)
     planet_houses = {}
     for name, lon_p in planet_positions.items():
@@ -84,7 +99,7 @@ def get_houses_and_planet_houses(
                 if start <= L < end:
                     house = i
                     break
-            else:
+            else:  # дом «пересекает» точку 0°
                 if L >= start or L < end:
                     house = i
                     break
