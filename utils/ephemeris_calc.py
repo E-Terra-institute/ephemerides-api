@@ -68,46 +68,52 @@ def get_houses_and_planet_houses(
     lon: float,
     hsys: str = 'P'
 ) -> dict:
-    # Приводим hsys к байтам
+    """
+    Возвращает:
+      - asc, mc: сидерический асцендент и среднее небо
+      - planet_houses: номер дома для каждой планеты,
+        вычисляя позиции при том же JD с учётом времени.
+    """
+    # 1) Переводим hsys в байты
     if isinstance(hsys, str):
         hsys = hsys.encode('ascii')
 
-    # Юлианская дата с учётом времени UT
+    # 2) JD с учётом UT
     ut = hour + minute/60.0 + second/3600.0
     jd = swe.julday(year, month, day, ut)
 
-    # Получаем cusps и ascmc
+    # 3) Получаем cusps и ascmc
     cusps, ascmc = swe.houses(jd, lat, lon, hsys)
     asc = round(ascmc[0], 2)
     mc  = round(ascmc[1], 2)
 
-    # Приводим cusps к списку границ домов
+    # 4) Приводим cusp к списку 12 границ
     cusp_list = list(cusps)
-    # Если длина >12 (есть dummy нулевой элемент), убираем его
     if len(cusp_list) > 12:
         cusp_list = cusp_list[1:]
-    n = len(cusp_list)  # обычно 12
+    n = len(cusp_list)  # должно быть 12
 
-    # Считаем позиции планет
-    planet_positions = get_planet_positions(year, month, day)
+    # 5) Вычисляем положение каждой «планеты» (включая Lilith, Selena) в этот же момент JD
     planet_houses = {}
+    for name, code in PLANETS.items():
+        data, _ = swe.calc_ut(jd, code)  # геоцентрич. долгота на UT
+        lon_p = data[0] % 360
 
-    # Для каждой планеты ищем в каком куспе она стоит
-    for name, lon_p in planet_positions.items():
-        L = lon_p % 360
+        # 6) Определение дома через cusps
         house_no = None
         for i, start_raw in enumerate(cusp_list):
             start = start_raw % 360
-            end = cusp_list[(i+1) % n] % 360
+            end   = cusp_list[(i+1) % n] % 360
             if start < end:
-                if start <= L < end:
+                if start <= lon_p < end:
                     house_no = i + 1
                     break
             else:
-                # диапазон пересекает 0°
-                if L >= start or L < end:
+                # диапазон, пересекающий 0°
+                if lon_p >= start or lon_p < end:
                     house_no = i + 1
                     break
+
         planet_houses[name] = house_no
 
     return {
