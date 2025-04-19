@@ -5,56 +5,56 @@ import pytz
 from flask_cors import CORS
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
-from utils.ephemeris_calc import get_planet_positions, get_aspects
+from utils.ephemeris_calc import (
+    get_planet_positions,
+    get_aspects,
+    get_sidereal_time
+)
 
-# Инициализируем Flask
+# Инициализация Flask
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
-# Геокодер и определитель часового пояса
+# Инициализация геокодера и определителя часового пояса
 geolocator = Nominatim(user_agent="sidereal_app")
 tzfinder   = TimezoneFinder()
 
+# Функция вычисления местного сидерического времени
 def compute_sidereal(date_str, time_str, tz_name, longitude):
-    """
-    По формуле Tзв = Tм – N + L/15 + GST – P
-    вычисляет локальное сидерическое время в HH:MM:SS
-    """
-    # Парсим местное время
+    # Парсим локальное время
     naive_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
     local_tz = pytz.timezone(tz_name)
     local_dt = local_tz.localize(naive_dt)
+    utc_dt   = local_dt.astimezone(pytz.utc)
 
-    # UTC-дата/время
-    utc_dt = local_dt.astimezone(pytz.utc)
+    # Раскладываем UTC-набор
     year, month, day = utc_dt.year, utc_dt.month, utc_dt.day
-    hour, minute, second = utc_dt.hour, utc_dt.minute, utc_dt.second
 
-    # Tм — местное время события (часа + минуты/60 + секунды/3600)
+    # Tm — местное время в дробных часах
     Tm = naive_dt.hour + naive_dt.minute/60 + naive_dt.second/3600
 
     # N — смещение часового пояса в часах
     N = local_dt.utcoffset().total_seconds() / 3600
 
-    # L/15 — долгота в часах
+    # Lh — долгота в часах
     Lh = longitude / 15.0
 
-    # GST — сидерическое время в 0h UT (HH:MM:SS) → часы
-    from utils.ephemeris_calc import get_sidereal_time
-    GST_str = get_sidereal_time(year, month, day)
-    h, m, s = map(int, GST_str.split(':'))
-    GST = h + m/60 + s/3600
+    # GST — сидерическое время в 0h UT (float часов)
+    GST = get_sidereal_time(year, month, day)
 
     # P — поправка нутации (пока 0)
     P = 0
 
-    # Считаем Tзв и нормализуем в диапазон [0,24)
+    # Итоговое местное сидерическое время в дробных часах
     Tzv = (Tm - N + Lh + GST - P) % 24
-    hh = int(Tzv)
-    mm = int((Tzv - hh) * 60)
-    ss = int(((Tzv - hh) * 60 - mm) * 60)
-    return f"{hh:02}:{mm:02}:{ss:02}"
 
+    # Форматируем в HH:MM:SS
+    h = int(Tzv)
+    m = int((Tzv - h) * 60)
+    s = int(((Tzv - h) * 60 - m) * 60)
+    return f"{h:02}:{m:02}:{s:02}"
+
+# Маршрут расчёта эфемерид
 @app.route("/ephemerides", methods=["GET"])
 def ephemerides():
     try:
@@ -66,7 +66,8 @@ def ephemerides():
 
     positions     = get_planet_positions(year, month, day)
     aspects       = get_aspects(positions)
-    sidereal_time = compute_sidereal(f"{year:04}-{month:02}-{day:02}", "00:00", "UTC", 0)
+    # Сидерическое время на начало дня UTC
+    sidereal_time = get_sidereal_time(year, month, day)
 
     return jsonify({
         "date": f"{year:04}-{month:02}-{day:02}",
@@ -75,11 +76,12 @@ def ephemerides():
         "aspects": aspects
     })
 
+# Страница конвертера времени
 @app.route("/time-converter")
 def time_converter():
-    # Рендерим форму, куда пользователь вводит город, дату и время
     return render_template("time_converter.html")
 
+# Конвертация локального времени в UTC
 @app.route("/api/convert-to-utc")
 def convert_to_utc():
     date_str = request.args.get("date")
@@ -87,7 +89,6 @@ def convert_to_utc():
     tz_name  = request.args.get("tz")
     if not all([date_str, time_str, tz_name]):
         return jsonify({"error": "Missing parameters"}), 400
-
     try:
         local_tz = pytz.timezone(tz_name)
         naive_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
@@ -97,10 +98,12 @@ def convert_to_utc():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Список часовых поясов
 @app.route("/api/timezones")
 def get_timezones():
     return jsonify(pytz.all_timezones)
 
+# Конвертация в сидерическое время по прямым параметрам
 @app.route("/api/convert-to-sidereal")
 def convert_to_sidereal():
     date_str = request.args.get("date")
@@ -115,6 +118,7 @@ def convert_to_sidereal():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Конвертация по городу
 @app.route("/api/convert-by-city")
 def convert_by_city():
     city     = request.args.get("city")
@@ -122,19 +126,15 @@ def convert_by_city():
     time_str = request.args.get("time")
     if not all([city, date_str, time_str]):
         return jsonify({"error": "Missing parameters"}), 400
-
-    # 1) Геокодируем город
+    # Геокодирование
     location = geolocator.geocode(city)
     if not location:
         return jsonify({"error": "City not found"}), 404
     lon, lat = location.longitude, location.latitude
-
-    # 2) Определяем часовой пояс
+    # Поиск часового пояса
     tz_name = tzfinder.timezone_at(lng=lon, lat=lat)
-    if not tzfinder:
+    if not tz_name:
         return jsonify({"error": "Timezone not found"}), 404
-
-    # 3) Считаем сидерическое время
     try:
         sid = compute_sidereal(date_str, time_str, tz_name, lon)
         return jsonify({
@@ -146,6 +146,7 @@ def convert_by_city():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Запуск
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
