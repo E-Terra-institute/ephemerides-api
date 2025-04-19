@@ -14,12 +14,12 @@ PLANETS = {
     'Uranus':     swe.URANUS,
     'Pluto':      swe.PLUTO,
     'True Node':  swe.TRUE_NODE,
-    'Lilith':     swe.MEAN_APOG
+    'Ліліт':     swe.MEAN_APOG
 }
 
 def get_planet_positions(year: int, month: int, day: int) -> dict:
     """
-    Геоцентрические долготы планет + Lilith и Selena (Lilith + 180°).
+    Геоцентрические долготы планет + Ліліт и Selena (Ліліт + 180°).
     """
     jd = swe.julday(year, month, day)
     positions = {}
@@ -30,7 +30,7 @@ def get_planet_positions(year: int, month: int, day: int) -> dict:
         positions[name] = round(data[0] % 360, 2)
 
     # 2) Selena как оппозиция к Lilith
-    if 'Lilith' in positions:
+    if 'Ліліт' in positions:
         positions['Selena'] = round((positions['Lilith'] + 180) % 360, 2)
 
     return positions
