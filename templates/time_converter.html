@@ -8,8 +8,12 @@
 </head>
 <body>
   <div class="converter">
-    <h2>Конвертер локального часу в сидеричний час</h2>
+    <h2>Конвертер місцевого сидеричного часу</h2>
     <div class="form-row">
+      <label>
+        Місто народження
+        <input type="text" id="city" placeholder="Наприклад, Kyiv" required>
+      </label>
       <label>
         Дата
         <input type="date" id="date" required>
@@ -18,54 +22,30 @@
         Час
         <input type="time" id="time" required>
       </label>
-      <label>
-        Часовий пояс
-        <select id="timezone" required>
-          <option value="">Завантаження...</option>
-        </select>
-      </label>
-      <label>
-        Довгота (°)
-        <input type="number" id="longitude" step="0.0001" value="{{ default_lon }}" required>
-      </label>
     </div>
-    <button onclick="convertToSidereal()">Конвертувати</button>
+    <button onclick="convertByCity()">Конвертувати</button>
     <div class="output" id="result"></div>
   </div>
 
   <script>
-    // Заповнюємо список часових поясів
-    document.addEventListener('DOMContentLoaded', async () => {
-      const res  = await fetch('/api/timezones');
-      const zones = await res.json();
-      const sel  = document.getElementById('timezone');
-      sel.innerHTML = '';
-      zones.forEach(tz => {
-        const opt = document.createElement('option');
-        opt.value = tz; opt.textContent = tz;
-        if (tz === 'Europe/Kyiv') opt.selected = true;
-        sel.appendChild(opt);
-      });
-    });
-
-    // Конвертація в сидеричний час
-    async function convertToSidereal() {
+    async function convertByCity() {
+      const city = document.getElementById('city').value.trim();
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
-      const tz   = document.getElementById('timezone').value;
-      const lon  = document.getElementById('longitude').value;
-
-      if (!date || !time || !tz || !lon) {
+      if (!city || !date || !time) {
         document.getElementById('result').textContent = 'Заповніть всі поля.';
         return;
       }
-
-      const res  = await fetch(
-        `/api/convert-to-sidereal?date=${date}&time=${time}&tz=${tz}&lon=${lon}`
+      const res = await fetch(
+        `/api/convert-by-city?city=${encodeURIComponent(city)}&date=${date}&time=${time}`
       );
       const data = await res.json();
       if (data.sidereal_time) {
-        document.getElementById('result').textContent = `Сидеричний час: ${data.sidereal_time}`;
+        document.getElementById('result').innerHTML = 
+          `<div>Місто: ${data.city}</div>
+           <div>Часовий пояс: ${data.timezone}</div>
+           <div>Довгота: ${parseFloat(data.longitude).toFixed(4)}</div>
+           <div>Сидеричний час: ${data.sidereal_time}</div>`;
       } else {
         document.getElementById('result').textContent = `Помилка: ${data.error}`;
       }
