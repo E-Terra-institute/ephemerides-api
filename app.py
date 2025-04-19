@@ -73,10 +73,9 @@ def convert_to_sidereal():
         local_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
         localized = local_tz.localize(local_dt)
         utc_dt = localized.astimezone(pytz.utc)
-        # Вычисляем сидерическое время через библиотеку
+        # Вычисляем сидерическое время только по дате (функция принимает 3 аргумента)
         sidereal = get_sidereal_time(
-            utc_dt.year, utc_dt.month, utc_dt.day,
-            utc_dt.hour, utc_dt.minute
+            utc_dt.year, utc_dt.month, utc_dt.day
         )
         return jsonify({"sidereal_time": sidereal})
     except Exception as e:
