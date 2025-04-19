@@ -15,7 +15,6 @@ PLANETS = {
     'Pluto':      swe.PLUTO,
     'True Node':  swe.TRUE_NODE,
     'Lilith':     swe.MEAN_APOG,
-    'Selena':     swe.OSCU_APOG
 }
 
 # Аспекты и орбис
