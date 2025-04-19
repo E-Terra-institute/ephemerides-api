@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Конвертер часу</title>
+  <title>Конвертер сидеричного часу</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <div class="converter">
-    <h2>Конвертер локального часу в UTC</h2>
+    <h2>Конвертер локального часу в сидеричний час</h2>
     <div class="form-row">
       <label>
         Дата
@@ -19,18 +19,18 @@
         <input type="time" id="time" required>
       </label>
       <label>
-        Часовий пояс
+        Часовий пояс
         <select id="timezone" name="tz" required>
           <option value="">Завантаження...</option>
         </select>
       </label>
     </div>
-    <button onclick="convertToUTC()">Конвертувати</button>
-    <div class="output" id="utc-result"></div>
+    <button onclick="convertToSidereal()">Конвертувати</button>
+    <div class="output" id="result"></div>
   </div>
 
   <script>
-    // Заповнення списку часових поясів динамично из API
+    // Заполняем список часовых поясов при загрузке страницы
     document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch('/api/timezones');
       const zones = await res.json();
@@ -45,22 +45,23 @@
       });
     });
 
-    async function convertToUTC() {
+    // Конвертация в сидерический час
+    async function convertToSidereal() {
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
       const tz   = document.getElementById('timezone').value;
 
       if (!date || !time || !tz) {
-        document.getElementById('utc-result').textContent = 'Заповніть всі поля.';
+        document.getElementById('result').textContent = 'Заповніть всі поля.';
         return;
       }
 
-      const res = await fetch(`/api/convert-to-utc?date=${date}&time=${time}&tz=${tz}`);
+      const res = await fetch(`/api/convert-to-sidereal?date=${date}&time=${time}&tz=${tz}`);
       const data = await res.json();
-      if (data.utc_time) {
-        document.getElementById('utc-result').textContent = `Час у UTC: ${data.utc_time}`;
+      if (data.sidereal_time) {
+        document.getElementById('result').textContent = `Сидеричний час: ${data.sidereal_time}`;
       } else {
-        document.getElementById('utc-result').textContent = `Помилка: ${data.error}`;
+        document.getElementById('result').textContent = `Помилка: ${data.error}`;
       }
     }
   </script>
