@@ -1,27 +1,33 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Конвертер времени</title>
+  <title>Конвертер часу</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <div class="converter">
-    <h2>Конвертер локального времени в UTC</h2>
+    <h2>Конвертер локального часу в UTC</h2>
     <div class="form-row">
-      <label>Дата <input type="date" id="date"></label>
-      <label>Время <input type="time" id="time"></label>
-      <label>Часовой пояс
-        <select id="timezone">
-          <option value="Europe/Kyiv" selected>Europe/Kyiv</option>
-          <option value="Europe/Moscow">Europe/Moscow</option>
-          <option value="Europe/London">Europe/London</option>
-          <option value="America/New_York">America/New_York</option>
+      <label>
+        Дата
+        <input type="date" id="date" name="date" required>
+      </label>
+      <label>
+        Час
+        <input type="time" id="time" name="time" required>
+      </label>
+      <label>
+        Часовий пояс
+        <select id="timezone" name="tz" required>
+          {% for tz in timezones %}
+          <option value="{{ tz }}" {% if tz == "Europe/Kyiv" %}selected{% endif %}>{{ tz }}</option>
+          {% endfor %}
         </select>
       </label>
     </div>
-    <button onclick="convertToUTC()">Конвертировать</button>
+    <button onclick="convertToUTC()">Конвертувати</button>
     <div class="output" id="utc-result"></div>
   </div>
 
@@ -32,15 +38,16 @@
       const tz   = document.getElementById('timezone').value;
 
       if (!date || !time || !tz) {
-        return document.getElementById('utc-result').textContent = 'Заполните все поля.';
+        document.getElementById('utc-result').textContent = 'Заповніть всі поля.';
+        return;
       }
 
       const res = await fetch(`/api/convert-to-utc?date=${date}&time=${time}&tz=${tz}`);
       const data = await res.json();
       if (data.utc_time) {
-        document.getElementById('utc-result').textContent = `Время в UTC: ${data.utc_time}`;
+        document.getElementById('utc-result').textContent = `Час у UTC: ${data.utc_time}`;
       } else {
-        document.getElementById('utc-result').textContent = `Ошибка: ${data.error}`;
+        document.getElementById('utc-result').textContent = `Помилка: ${data.error}`;
       }
     }
   </script>
