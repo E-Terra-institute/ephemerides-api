@@ -59,6 +59,29 @@ def convert_to_utc():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# API-эндпоинт для конвертации локального времени в сидерическое время
+@app.route("/api/convert-to-sidereal")
+def convert_to_sidereal():
+    date_str = request.args.get("date")
+    time_str = request.args.get("time")
+    tz_name  = request.args.get("tz")
+    if not all([date_str, time_str, tz_name]):
+        return jsonify({"error": "Missing parameters"}), 400
+    try:
+        # Локальное время -> UTC
+        local_tz = pytz.timezone(tz_name)
+        local_dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        localized = local_tz.localize(local_dt)
+        utc_dt = localized.astimezone(pytz.utc)
+        # Вычисляем сидерическое время через библиотеку
+        sidereal = get_sidereal_time(
+            utc_dt.year, utc_dt.month, utc_dt.day,
+            utc_dt.hour, utc_dt.minute
+        )
+        return jsonify({"sidereal_time": sidereal})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # API-эндпоинт для получения списка часовых поясов
 @app.route("/api/timezones")
 def get_timezones():
