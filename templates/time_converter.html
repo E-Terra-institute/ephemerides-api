@@ -12,18 +12,16 @@
     <div class="form-row">
       <label>
         Дата
-        <input type="date" id="date" name="date" required>
+        <input type="date" id="date" required>
       </label>
       <label>
         Час
-        <input type="time" id="time" name="time" required>
+        <input type="time" id="time" required>
       </label>
       <label>
         Часовий пояс
         <select id="timezone" name="tz" required>
-          {% for tz in timezones %}
-          <option value="{{ tz }}" {% if tz == "Europe/Kyiv" %}selected{% endif %}>{{ tz }}</option>
-          {% endfor %}
+          <option value="">Завантаження...</option>
         </select>
       </label>
     </div>
@@ -32,6 +30,21 @@
   </div>
 
   <script>
+    // Заповнення списку часових поясів динамично из API
+    document.addEventListener('DOMContentLoaded', async () => {
+      const res = await fetch('/api/timezones');
+      const zones = await res.json();
+      const sel = document.getElementById('timezone');
+      sel.innerHTML = '';
+      zones.forEach(tz => {
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz;
+        if (tz === 'Europe/Kyiv') opt.selected = true;
+        sel.appendChild(opt);
+      });
+    });
+
     async function convertToUTC() {
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
