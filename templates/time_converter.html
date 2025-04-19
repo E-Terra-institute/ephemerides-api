@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Конвертер времени</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="converter">
+    <h2>Конвертер локального времени в UTC</h2>
+    <div class="form-row">
+      <label>Дата <input type="date" id="date"></label>
+      <label>Время <input type="time" id="time"></label>
+      <label>Часовой пояс
+        <select id="timezone">
+          <option value="Europe/Kyiv" selected>Europe/Kyiv</option>
+          <option value="Europe/Moscow">Europe/Moscow</option>
+          <option value="Europe/London">Europe/London</option>
+          <option value="America/New_York">America/New_York</option>
+        </select>
+      </label>
+    </div>
+    <button onclick="convertToUTC()">Конвертировать</button>
+    <div class="output" id="utc-result"></div>
+  </div>
+
+  <script>
+    async function convertToUTC() {
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const tz   = document.getElementById('timezone').value;
+
+      if (!date || !time || !tz) {
+        return document.getElementById('utc-result').textContent = 'Заполните все поля.';
+      }
+
+      const res = await fetch(`/api/convert-to-utc?date=${date}&time=${time}&tz=${tz}`);
+      const data = await res.json();
+      if (data.utc_time) {
+        document.getElementById('utc-result').textContent = `Время в UTC: ${data.utc_time}`;
+      } else {
+        document.getElementById('utc-result').textContent = `Ошибка: ${data.error}`;
+      }
+    }
+  </script>
+</body>
+</html>
