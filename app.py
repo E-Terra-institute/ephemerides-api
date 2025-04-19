@@ -1,8 +1,10 @@
 import os
 from flask import Flask, request, jsonify
 from utils.ephemeris_calc import get_planet_positions, get_aspects, get_sidereal_time
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/ephemerides", methods=["GET"])
 def ephemerides():
