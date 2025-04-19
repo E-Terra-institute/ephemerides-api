@@ -73,9 +73,9 @@ def get_houses_and_planet_houses(
       - asc, mc: сидерический асцендент и среднее небо
       - planet_houses: номер дома для каждой планеты
     """
-    # Если передали str, конвертируем в один байт
+    # Если передали str, конвертируем в байты
     if isinstance(hsys, str):
-        hsys = hsys.encode('ascii')  # теперь это b'P'
+        hsys = hsys.encode('ascii')
 
     # Юлианская дата с учётом времени UT
     ut = hour + minute/60.0 + second/3600.0
@@ -86,7 +86,7 @@ def get_houses_and_planet_houses(
     asc = round(ascmc[0], 2)
     mc  = round(ascmc[1], 2)
 
-    # Определяем в каком доме каждая планета
+    # Определяем дом для каждой планеты
     planet_positions = get_planet_positions(year, month, day)
     planet_houses = {}
     for name, lon_p in planet_positions.items():
@@ -94,15 +94,23 @@ def get_houses_and_planet_houses(
         house = None
         for i in range(1, 13):
             start = cusps[i] % 360
-            end   = cusps[(i % 12) + 1] % 360
+            # для домов 1–11 берем следующий элемент,
+            # для 12‑го дома — возвращаемся к первому cusp
+            if i < 12:
+                end = cusps[i+1] % 360
+            else:
+                end = cusps[1] % 360
+
             if start < end:
                 if start <= L < end:
                     house = i
                     break
-            else:  # дом «пересекает» точку 0°
+            else:
+                # дом пересекает 0° эклиптики
                 if L >= start or L < end:
                     house = i
                     break
+
         planet_houses[name] = house
 
     return {
