@@ -15,7 +15,7 @@ PLANETS = {
     'Pluto':      swe.PLUTO,
     'True Node':  swe.TRUE_NODE,
     'Lilith':     swe.MEAN_APOG,
-    'True Node':  swe.TRUE_NODE,
+    
 }
 
 def get_planet_positions(year: int, month: int, day: int) -> dict:
