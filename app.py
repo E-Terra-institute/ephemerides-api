@@ -1,8 +1,7 @@
 import os
-from flask import Flask, request, jsonify, render_template   # 1) добавлен render_template
-from datetime import datetime                               # 2) добавлен импорт datetime
-import pytz                                                 # 3) добавлен pytz
-
+from flask import Flask, request, jsonify, render_template
+from datetime import datetime
+import pytz
 from flask_cors import CORS
 from utils.ephemeris_calc import (
     get_planet_positions,
@@ -10,9 +9,11 @@ from utils.ephemeris_calc import (
     get_sidereal_time
 )
 
-app = Flask(__name__)   # можно оставить как есть — по умолчанию ищет templates/ и static/
+# Создание Flask-приложения с папками шаблонов и статики
+app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
+# Существующий маршрут для расчёта эфемерид
 @app.route("/ephemerides", methods=["GET"])
 def ephemerides():
     try:
@@ -33,12 +34,14 @@ def ephemerides():
         "aspects": aspects
     })
 
-# 4) новый маршрут для страницы конвертера времени
+# Маршрут для отображения страницы конвертера времени
 @app.route("/time-converter")
 def time_converter():
-    return render_template("time_converter.html")
+    # Передаём в шаблон полный список IANA-часовых поясов
+    timezones = pytz.all_timezones
+    return render_template("time_converter.html", timezones=timezones)
 
-# 5) новый API‑эндпоинт для конвертации локального времени в UTC
+# API-эндпоинт для конвертации локального времени в UTC
 @app.route("/api/convert-to-utc")
 def convert_to_utc():
     date_str = request.args.get("date")
@@ -56,6 +59,12 @@ def convert_to_utc():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# API-эндпоинт для получения списка часовых поясов
+@app.route("/api/timezones")
+def get_timezones():
+    return jsonify(pytz.all_timezones)
+
+# Запуск сервера
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
