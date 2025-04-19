@@ -20,9 +20,13 @@
       </label>
       <label>
         Часовий пояс
-        <select id="timezone" name="tz" required>
+        <select id="timezone" required>
           <option value="">Завантаження...</option>
         </select>
+      </label>
+      <label>
+        Довгота (°)
+        <input type="number" id="longitude" step="0.0001" value="{{ default_lon }}" required>
       </label>
     </div>
     <button onclick="convertToSidereal()">Конвертувати</button>
@@ -30,33 +34,35 @@
   </div>
 
   <script>
-    // Заполняем список часовых поясов при загрузке страницы
+    // Заповнюємо список часових поясів
     document.addEventListener('DOMContentLoaded', async () => {
-      const res = await fetch('/api/timezones');
+      const res  = await fetch('/api/timezones');
       const zones = await res.json();
-      const sel = document.getElementById('timezone');
+      const sel  = document.getElementById('timezone');
       sel.innerHTML = '';
       zones.forEach(tz => {
         const opt = document.createElement('option');
-        opt.value = tz;
-        opt.textContent = tz;
+        opt.value = tz; opt.textContent = tz;
         if (tz === 'Europe/Kyiv') opt.selected = true;
         sel.appendChild(opt);
       });
     });
 
-    // Конвертация в сидерический час
+    // Конвертація в сидеричний час
     async function convertToSidereal() {
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
       const tz   = document.getElementById('timezone').value;
+      const lon  = document.getElementById('longitude').value;
 
-      if (!date || !time || !tz) {
+      if (!date || !time || !tz || !lon) {
         document.getElementById('result').textContent = 'Заповніть всі поля.';
         return;
       }
 
-      const res = await fetch(`/api/convert-to-sidereal?date=${date}&time=${time}&tz=${tz}`);
+      const res  = await fetch(
+        `/api/convert-to-sidereal?date=${date}&time=${time}&tz=${tz}&lon=${lon}`
+      );
       const data = await res.json();
       if (data.sidereal_time) {
         document.getElementById('result').textContent = `Сидеричний час: ${data.sidereal_time}`;
